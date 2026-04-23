@@ -29,6 +29,8 @@ runs:
       run: |
         ESC='s/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g'
         COMMIT_MSG="$(printf '%s' "${{ github.event.head_commit.message }}" | sed "$ESC")"
+        REPO_URL="<a href=\"https://github.com/${{ github.repository }}\">${{ github.repository }}</a>"
+        REF_URL="<a href=\"https://github.com/${{ github.repository }}/tree/${{ github.ref_name }}\">${{ github.ref_name }}</a>"
         RUN_URL="<a href=\"https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\">runs/${{ github.run_id }}</a>"
 
         if [ "$FAILED" = "true" ]; then
@@ -44,11 +46,11 @@ runs:
           ERRORS_BLOCK=""
           [ -n "$ERROR_LOG" ] && ERRORS_BLOCK="$(printf '\n\n<blockquote expandable>%s</blockquote>' "${ERROR_LOG}")"
           TEXT=$(printf '<b>❌ CI failed</b>\n%s @ %s\n%s #%s%s\n\n%s' \
-            "${{ github.repository }}" "${{ github.ref_name }}" \
+            "${REPO_URL}" "${REF_URL}" \
             "${COMMIT_MSG}" "${{ github.run_number }}" "${ERRORS_BLOCK}" "${RUN_URL}")
         else
           TEXT=$(printf '<b>✅ CI passed</b>\n%s @ %s\n%s #%s\n\n%s' \
-            "${{ github.repository }}" "${{ github.ref_name }}" \
+            "${REPO_URL}" "${REF_URL}" \
             "${COMMIT_MSG}" "${{ github.run_number }}" "${RUN_URL}")
         fi
 
