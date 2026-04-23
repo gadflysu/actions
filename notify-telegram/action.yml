@@ -42,16 +42,14 @@ runs:
             | head -15 \
             | sed "$ESC")
           ERRORS_BLOCK=""
-          [ -n "$ERROR_LOG" ] && ERRORS_BLOCK="$(printf '\n<blockquote expandable>%s</blockquote>' "${ERROR_LOG}")"
-          TEXT=$(printf '<b>❌ CI FAILED</b>\n<code>%s @ %s</code>\n<i>%s #%s</i>%s\n\n%s' \
-            "${{ github.repository }}" "${{ github.ref_name }}" \
-            "${COMMIT_MSG}" "${{ github.run_number }}" \
-            "${ERRORS_BLOCK}" "${RUN_URL}")
+          [ -n "$ERROR_LOG" ] && ERRORS_BLOCK="$(printf '\n\n<blockquote expandable>%s</blockquote>' "${ERROR_LOG}")"
+          TEXT=$(printf '<b>❌ CI failed</b>\n%s @ %s %s\n%s #%s%s' \
+            "${{ github.repository }}" "${{ github.ref_name }}" "${RUN_URL}" \
+            "${COMMIT_MSG}" "${{ github.run_number }}" "${ERRORS_BLOCK}")
         else
-          TEXT=$(printf '<b>✅ CI PASSED</b>\n<code>%s @ %s</code>\n<i>%s #%s</i>\n\n%s' \
-            "${{ github.repository }}" "${{ github.ref_name }}" \
-            "${COMMIT_MSG}" "${{ github.run_number }}" \
-            "${RUN_URL}")
+          TEXT=$(printf '<b>✅ CI passed</b>\n%s @ %s %s\n%s #%s' \
+            "${{ github.repository }}" "${{ github.ref_name }}" "${RUN_URL}" \
+            "${COMMIT_MSG}" "${{ github.run_number }}")
         fi
 
         for attempt in 1 2 3; do
