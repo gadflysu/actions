@@ -1,0 +1,67 @@
+name: Notify Telegram
+description: Send CI status notification to Telegram with optional error log from failed jobs
+
+inputs:
+  token:
+    description: Telegram bot token
+    required: true
+  chat_id:
+    description: Telegram chat ID
+    required: true
+  status:
+    description: CI status - 'failure' or 'success'
+    required: true
+  gh_token:
+    description: GitHub token for fetching failed job logs
+    required: false
+    default: ${{ github.token }}
+
+runs:
+  using: composite
+  steps:
+    - name: Send notification
+      shell: bash
+      env:
+        TG_BOT_TOKEN: ${{ inputs.token }}
+        TG_CHAT_ID: ${{ inputs.chat_id }}
+        GH_TOKEN: ${{ inputs.gh_token }}
+        FAILED: ${{ inputs.status == 'failure' }}
+      run: |
+        ESC='s/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g'
+        COMMIT_MSG="$(printf '%s' "${{ github.event.head_commit.message }}" | sed "$ESC")"
+        RUN_URL="<a href=\"https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\">runs/${{ github.run_id }}</a>"
+
+        if [ "$FAILED" = "true" ]; then
+          ERROR_LOG=$(gh run view ${{ github.run_id }} --log-failed --repo ${{ github.repository }} 2>&1 \
+            | cut -f3- \
+            | sed 's/^[^ ]* //' \
+            | sed 's/\x1b\[[0-9;]*m//g' \
+            | grep -P '(error|warning|fatal|failed|exception)(?![a-z])' \
+            | grep -v '^$' \
+            | sort -u \
+            | head -15 \
+            | sed "$ESC")
+          ERRORS_BLOCK=""
+          [ -n "$ERROR_LOG" ] && ERRORS_BLOCK="$(printf '\n<blockquote expandable>%s</blockquote>' "${ERROR_LOG}")"
+          TEXT=$(printf '<b>❌ CI FAILED</b>\n<code>%s @ %s</code>\n<i>%s #%s</i>%s\n\n%s' \
+            "${{ github.repository }}" "${{ github.ref_name }}" \
+            "${COMMIT_MSG}" "${{ github.run_number }}" \
+            "${ERRORS_BLOCK}" "${RUN_URL}")
+        else
+          TEXT=$(printf '<b>✅ CI PASSED</b>\n<code>%s @ %s</code>\n<i>%s #%s</i>\n\n%s' \
+            "${{ github.repository }}" "${{ github.ref_name }}" \
+            "${COMMIT_MSG}" "${{ github.run_number }}" \
+            "${RUN_URL}")
+        fi
+
+        for attempt in 1 2 3; do
+          RESP=$(curl -s -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${TG_CHAT_ID}" \
+            --data-urlencode "parse_mode=HTML" \
+            --data-urlencode "text=${TEXT:0:4000}" \
+            )
+          echo "${RESP}" | grep -q '"ok":true' && break
+          echo "Attempt ${attempt} failed, retrying in 5s..." >&2
+          [ "${attempt}" -lt 3 ] && sleep 5
+        done
+        echo "${RESP}" | grep -q '"ok":true' || exit 1
