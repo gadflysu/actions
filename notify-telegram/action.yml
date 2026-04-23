@@ -43,13 +43,13 @@ runs:
             | sed "$ESC")
           ERRORS_BLOCK=""
           [ -n "$ERROR_LOG" ] && ERRORS_BLOCK="$(printf '\n\n<blockquote expandable>%s</blockquote>' "${ERROR_LOG}")"
-          TEXT=$(printf '<b>❌ CI failed</b>\n%s @ %s %s\n%s #%s%s' \
-            "${{ github.repository }}" "${{ github.ref_name }}" "${RUN_URL}" \
-            "${COMMIT_MSG}" "${{ github.run_number }}" "${ERRORS_BLOCK}")
+          TEXT=$(printf '<b>❌ CI failed</b>\n%s @ %s\n%s #%s%s\n\n%s' \
+            "${{ github.repository }}" "${{ github.ref_name }}" \
+            "${COMMIT_MSG}" "${{ github.run_number }}" "${ERRORS_BLOCK}" "${RUN_URL}")
         else
-          TEXT=$(printf '<b>✅ CI passed</b>\n%s @ %s %s\n%s #%s' \
-            "${{ github.repository }}" "${{ github.ref_name }}" "${RUN_URL}" \
-            "${COMMIT_MSG}" "${{ github.run_number }}")
+          TEXT=$(printf '<b>✅ CI passed</b>\n%s @ %s\n%s #%s\n\n%s' \
+            "${{ github.repository }}" "${{ github.ref_name }}" \
+            "${COMMIT_MSG}" "${{ github.run_number }}" "${RUN_URL}")
         fi
 
         for attempt in 1 2 3; do
