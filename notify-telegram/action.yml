@@ -30,7 +30,7 @@ runs:
         ESC='s/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g'
         COMMIT_MSG="$(printf '%s' "${{ github.event.head_commit.message }}" | sed "$ESC")"
         REPO_URL="<a href=\"https://github.com/${{ github.repository }}\">${{ github.repository }}</a>"
-        REF_URL="<a href=\"https://github.com/${{ github.repository }}/tree/${{ github.ref_name }}\">${{ github.ref_name }}</a>"
+        REF_URL="<a href=\"https://github.com/${{ github.repository }}/commit/${{ github.sha }}\">${{ github.ref_name }}</a>"
         RUN_URL="<a href=\"https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\">runs/${{ github.run_id }}</a>"
 
         if [ "$FAILED" = "true" ]; then
